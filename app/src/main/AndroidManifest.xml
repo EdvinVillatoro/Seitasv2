@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    package="com.example.seitasv2">
+
+    <!-- Permiso para conexión a Internet -->
+    <uses-permission android:name="android.permission.INTERNET" />
+
+    <application
+        android:allowBackup="true"
+        android:icon="@mipmap/ic_launcher"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.Seitasv2"
+        android:usesCleartextTraffic="true" tools:targetApi="31">
+
+    <!-- Pantalla de inicio (Launcher) -->
+    <activity
+        android:name="com.example.seitasv2.WelcomeActivity"
+        android:exported="true"
+        android:theme="@style/Theme.Seitasv2">
+        <intent-filter>
+            <action android:name="android.intent.action.MAIN" />
+            <category android:name="android.intent.category.LAUNCHER" />
+        </intent-filter>
+    </activity>
+
+    <!-- Login -->
+    <activity
+        android:name="com.example.seitasv2.LoginActivity"
+        android:exported="true"
+        android:theme="@style/Theme.Seitasv2" />
+
+    <!-- Home -->
+    <activity
+        android:name="com.example.seitasv2.MainActivity"
+        android:exported="true"
+        android:theme="@style/Theme.Seitasv2" />
+
+    <!-- Lecciones -->
+    <activity
+        android:name="com.example.seitasv2.LeccionesActivity"
+        android:exported="true"
+        android:label="Lecciones"
+        android:theme="@style/Theme.Seitasv2" />
+
+    <!-- Usuarios (lista) -->
+    <activity
+        android:name="com.example.seitasv2.UsuariosActivity"
+        android:exported="true"
+        android:label="Usuarios"
+        android:theme="@style/Theme.Seitasv2" />
+
+    <!-- Gestión de usuarios (admin) -->
+    <activity
+        android:name="com.example.seitasv2.GestionUsuariosActivity"
+        android:exported="true"
+        android:label="Gestión de Usuarios"
+        android:theme="@style/Theme.Seitasv2" />
+
+    <!-- Gestión de lecciones (admin) -->
+
+
+</application>
+    </manifest>

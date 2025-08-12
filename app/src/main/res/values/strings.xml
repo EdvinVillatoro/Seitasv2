@@ -1,0 +1,32 @@
+<resources>
+    <string name="welcome_subtitle">Aprende lo básico del lenguaje de señas de forma visual y divertida</string>
+    <string name="btn_empezar">Empezar</string>
+
+    <string name="login_email">Email</string>
+    <string name="login_password">Contraseña</string>
+    <string name="login_signin">Ingresar</string>
+    <string name="login_create_account">Crear una cuenta</string>
+    <string name="login_guest">Ingresar como invitado</string>
+
+    <string name="home_lessons">Lecciones</string>
+    <string name="home_practice">Prácticas</string>
+    <string name="home_logout">Cerrar sesión</string>
+    <string name="home_users">Ver Usuarios</string>
+    <string name="home_admin_lessons">Gestión de Lecciones (Admin)</string>
+
+    <string name="admin_lessons_title">Gestión de Lecciones</string>
+    <string name="admin_lesson_new">Nueva Lección</string>
+    <string name="admin_lesson_edit">Editar Lección</string>
+    <string name="field_gesto">Gesto detectado</string>
+    <string name="field_desc">Descripción</string>
+    <string name="field_video">Video URL</string>
+    <string name="field_tips">Tips</string>
+    <string name="field_categoria">Id Categoría</string>
+    <string name="field_vector">Vector gesto (JSON/texto)</string>
+    <string name="field_estado">Estado</string>
+    <string name="btn_save">Guardar</string>
+    <string name="btn_cancel">Cancelar</string>
+    <string name="btn_edit">Editar</string>
+    <string name="btn_delete">Eliminar</string>
+    <string name="empty_lessons">No hay lecciones</string>
+</resources>
