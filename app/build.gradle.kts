@@ -17,16 +17,23 @@ android {
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables { useSupportLibrary = true }
+
+        // ❌ QUITA x86/x86_64 — MediaPipe no trae esos SOs.
+        // ✅ Opción A: sin filtros (recomendado)
+        // ndk { /* sin abiFilters para empaquetar lo que traigan las libs */ }
+
+        // ✅ Opción B: si quieres filtrar, usa ARM
+        ndk {
+            abiFilters += listOf("arm64-v8a", "armeabi-v7a")
+        }
     }
 
     buildTypes {
-        debug {
-            // solo cosmético, pero útil para distinguir builds
+        getByName("debug") {
             applicationIdSuffix = ".debug"
             versionNameSuffix = "-debug"
-            // nada más aquí; la excepción de HTTP la haremos por resources
         }
-        release {
+        getByName("release") {
             isMinifyEnabled = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
@@ -40,10 +47,19 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
     kotlinOptions { jvmTarget = "17" }
+
     buildFeatures { compose = true }
 
+    // AGP 8+: packaging {}
     packaging {
-        resources { excludes += "/META-INF/{AL2.0,LGPL2.1}" }
+        resources {
+            excludes += "/META-INF/{AL2.0,LGPL2.1}"
+        }
+    }
+
+    // evitar compresión de modelos (opcional, acelera carga)
+    androidResources {
+        noCompress += listOf("tflite", "lite", "bin", "task", "dat", "pb")
     }
 }
 
@@ -51,7 +67,6 @@ dependencies {
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)
-
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.ui)
     implementation("androidx.compose.ui:ui-text")
@@ -59,15 +74,18 @@ dependencies {
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
     implementation("androidx.compose.material:material-icons-extended")
-
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
+    implementation(libs.androidx.room.external.antlr)
 
-    implementation("com.squareup.retrofit2:retrofit:2.9.0")
-    implementation("com.squareup.retrofit2:converter-gson:2.9.0")
-    implementation("com.squareup.okhttp3:okhttp:4.11.0")
-    implementation("com.squareup.okhttp3:logging-interceptor:4.11.0")
+    val camerax = "1.3.4"
+    implementation("androidx.camera:camera-core:$camerax")
+    implementation("androidx.camera:camera-camera2:$camerax")
+    implementation("androidx.camera:camera-lifecycle:$camerax")
+    implementation("androidx.camera:camera-view:$camerax")
 
-    implementation("com.google.code.gson:gson:2.10.1")
+
+    // MediaPipe Tasks Vision (mantén tu versión si ya la tienes sincronizada)
+    implementation("com.google.mediapipe:tasks-vision:0.10.14")
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

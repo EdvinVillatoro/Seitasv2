@@ -105,7 +105,7 @@ fun HandLogo(
 fun PeachButton(
     text: String,
     onClick: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier.Companion = Modifier
 ) {
     Card(
         onClick = onClick,

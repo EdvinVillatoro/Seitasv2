@@ -28,6 +28,12 @@ class MainActivity : ComponentActivity() {
                         },
                         onOpenUsers = {
                             startActivity(Intent(this, UsuariosActivity::class.java))
+                        },
+                        onOpenHands = {
+                            startActivity(Intent(this, HandsActivity::class.java))
+                        },
+                        onOpenDataset = {
+                            startActivity(Intent(this, DatasetActivity::class.java))
                         }
                     )
                 }
@@ -39,7 +45,9 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun HomeScreen(
     onStartLessons: () -> Unit,
-    onOpenUsers: () -> Unit
+    onOpenUsers: () -> Unit,
+    onOpenHands: () -> Unit,
+    onOpenDataset: () -> Unit
 ) {
     val ctx = LocalContext.current
     val isAdmin = ctx
@@ -48,6 +56,13 @@ fun HomeScreen(
 
     PeachScreen {
         PeachButton("Lecciones", onClick = onStartLessons)
+        Spacer(Modifier.height(12.dp))
+
+        PeachButton("Reconocimiento de Manos", onClick = onOpenHands)
+        Spacer(Modifier.height(12.dp))
+
+        // 🚀 Nuevo botón para modo dataset
+        PeachButton("Modo Dataset (Guardar Gestos)", onClick = onOpenDataset)
         Spacer(Modifier.height(12.dp))
 
         if (isAdmin) {

@@ -8,7 +8,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -32,7 +31,7 @@ class WelcomeActivity : ComponentActivity() {
                     PeachButton(
                         text = stringResource(R.string.btn_empezar),
                         onClick = { startActivity(Intent(this@WelcomeActivity, LoginActivity::class.java)) },
-                        modifier = Modifier.fillMaxWidth()
+
                     )
                     Spacer(Modifier.height(24.dp))
                     Text(stringResource(R.string.welcome_subtitle))

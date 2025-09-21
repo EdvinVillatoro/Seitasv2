@@ -12,7 +12,9 @@ import java.net.HttpURLConnection
 import java.net.URL
 
 // Ajusta si cambias puerto/host del backend
-const val BASE_URL = "http://10.0.2.2:5000/api"
+
+const val BASE_URL = "http://172.20.10.4:5000/api"  
+
 
 /* -------------------------------------------------------
  *  Helpers HTTP básicos
