@@ -41,7 +41,7 @@ import org.json.JSONArray
 import org.json.JSONObject
 import java.util.concurrent.Executors
 
-// Importa helpers HTTP que ya tienes en network.kt
+// Helpers HTTP
 import com.example.seitasv2.httpPost
 import com.example.seitasv2.BASE_URL
 
@@ -131,8 +131,15 @@ fun DatasetScreen(
         val hand = newResult.landmarks().firstOrNull()
         if (hand != null) {
             val flat = hand.flatMap { listOf(it.x(), it.y(), it.z()) }
-            buffer.add(flat)
-            if (buffer.size > 30) buffer.removeAt(0)
+            if (flat.size == 63) {
+                buffer.add(flat)
+                if (buffer.size > 60) buffer.removeAt(0)
+                Log.d("DatasetActivity", "✅ Frame agregado. Buffer=${buffer.size}")
+            } else {
+                Log.w("DatasetActivity", "⚠️ Frame inválido con ${flat.size} valores")
+            }
+        } else {
+            Log.d("DatasetActivity", "❌ No se detectó mano")
         }
     }
 
@@ -155,7 +162,7 @@ fun DatasetScreen(
             .also {
                 it.setAnalyzer(Executors.newSingleThreadExecutor()) { imageProxy ->
                     try {
-                        val bmp = imageProxy.toBitmap() // usa el helper de HandsActivity
+                        val bmp = imageProxy.toBitmap()
                         val mpImage = BitmapImageBuilder(bmp).build()
                         val opts = ImageProcessingOptions.builder().build()
                         detector.detectAsync(mpImage, opts, System.currentTimeMillis())
@@ -188,7 +195,7 @@ fun DatasetScreen(
 
         // Overlay landmarks
         if (result != null) {
-            LandmarkOverlay(
+            DatasetLandmarkOverlay(
                 modifier = Modifier.fillMaxSize(),
                 result = result,
                 usarCamaraFrontal = true,
@@ -207,24 +214,65 @@ fun DatasetScreen(
                 onValueChange = { label = it },
                 label = { Text("Etiqueta del gesto") }
             )
+
             Spacer(modifier = Modifier.height(8.dp))
+
+            Text(
+                text = "Frames válidos: ${buffer.size}",
+                color = if (buffer.size >= 20) Color.Green else Color.Red
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
             Button(
                 onClick = {
-                    if (buffer.isNotEmpty()) {
-                        CoroutineScope(Dispatchers.IO).launch {
-                            try {
-                                val payload = JSONObject().apply {
-                                    put("nombre", label) // 👈 coincide con backend
-                                    put("datos", JSONArray(buffer.map { JSONArray(it) }))
+                    if (buffer.size < 20) {
+                        Toast.makeText(ctx, "Captura más frames (mínimo 20)", Toast.LENGTH_SHORT).show()
+                        return@Button
+                    }
+
+                    val snapshot: List<List<Float>> = buffer.toList()
+                    buffer.clear()
+
+                    CoroutineScope(Dispatchers.IO).launch {
+                        try {
+                            val validFrames = snapshot.filter { it.size == 63 }
+                            Log.d("DatasetActivity", "Procesando ${validFrames.size} frames válidos")
+
+                            if (validFrames.size < 20) {
+                                CoroutineScope(Dispatchers.Main).launch {
+                                    Toast.makeText(ctx, "Necesitas al menos 20 frames válidos", Toast.LENGTH_SHORT).show()
                                 }
-                                val res = httpPost(ctx, "$BASE_URL/gestos", payload.toString())
-                                Log.d("DatasetActivity", "Respuesta servidor: $res")
-                            } catch (e: Exception) {
-                                Log.e("DatasetActivity", "Error guardando gesto", e)
+                                return@launch
+                            }
+
+                            // ✅ Promedio corregido
+                            val sizeF = validFrames.size.toFloat()
+                            val avg: FloatArray = FloatArray(63) { idx ->
+                                var s = 0f
+                                for (frame in validFrames) {
+                                    s += frame[idx]
+                                }
+                                s / sizeF
+                            }
+
+                            val payload = JSONObject().apply {
+                                put("nombre", label.ifBlank { "GestoSinNombre" })
+                                put("datos", JSONArray(avg.toList()))
+                            }
+
+                            val res = httpPost(ctx, "$BASE_URL/gestos", payload.toString())
+                            Log.d("DatasetActivity", "📥 Respuesta servidor: $res")
+
+                            CoroutineScope(Dispatchers.Main).launch {
+                                Toast.makeText(ctx, "✅ Gesto enviado a DB", Toast.LENGTH_SHORT).show()
+                            }
+                        } catch (e: Exception) {
+                            Log.e("DatasetActivity", "Error guardando gesto", e)
+                            CoroutineScope(Dispatchers.Main).launch {
+                                Toast.makeText(ctx, "❌ Error enviando gesto: ${e.message}", Toast.LENGTH_LONG).show()
                             }
                         }
-                        buffer.clear()
-                        Toast.makeText(ctx, "Gesto enviado a DB", Toast.LENGTH_SHORT).show()
                     }
                 }
             ) { Text("Guardar gesto") }
@@ -237,10 +285,8 @@ fun DatasetScreen(
     }
 }
 
-/* ---------- Overlay para landmarks ---------- */
-
 @Composable
-private fun LandmarkOverlay(
+private fun DatasetLandmarkOverlay(
     modifier: Modifier,
     result: HandLandmarkerResult?,
     usarCamaraFrontal: Boolean,
@@ -251,12 +297,12 @@ private fun LandmarkOverlay(
     if (result == null) return
 
     val connections = listOf(
-        0 to 1, 1 to 2, 2 to 3, 3 to 4,          // pulgar
-        0 to 5, 5 to 6, 6 to 7, 7 to 8,          // índice
-        5 to 9, 9 to 10, 10 to 11, 11 to 12,     // medio
-        9 to 13, 13 to 14, 14 to 15, 15 to 16,   // anular
-        13 to 17, 17 to 18, 18 to 19, 19 to 20,  // meñique
-        0 to 17                                  // palma
+        0 to 1, 1 to 2, 2 to 3, 3 to 4,
+        0 to 5, 5 to 6, 6 to 7, 7 to 8,
+        5 to 9, 9 to 10, 10 to 11, 11 to 12,
+        9 to 13, 13 to 14, 14 to 15, 15 to 16,
+        13 to 17, 17 to 18, 18 to 19, 19 to 20,
+        0 to 17
     )
 
     val hands = result.landmarks()

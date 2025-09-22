@@ -1,5 +1,8 @@
 package com.example.seitasv2
 
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.CoroutineScope
 import android.Manifest
 import android.content.Context
 import android.content.ContextWrapper
@@ -249,7 +252,7 @@ private fun HandsScreen(
 /* ---------- Overlay: DIBUJO DE LANDMARKS ---------- */
 
 @Composable
-private fun LandmarkOverlay(
+fun LandmarkOverlay(
     modifier: Modifier,
     result: HandLandmarkerResult?,
     usarCamaraFrontal: Boolean,
@@ -294,12 +297,6 @@ private fun LandmarkOverlay(
     }
 }
 
-/**
- * Mapea (x,y) normalizados de MediaPipe a coordenadas del PreviewView:
- * - Reproducimos el mismo FILL_CENTER que usa PreviewView.
- * - Aplicamos espejo horizontal si la cámara es frontal.
- * - Rotamos 90° a la derecha (x,y) → (y, 1-x) para que el trazado calce en vertical frontal.
- */
 fun toViewCoords(
     xNorm: Float,
     yNorm: Float,
