@@ -3,11 +3,9 @@
     xmlns:tools="http://schemas.android.com/tools"
     package="com.example.seitasv2">
 
-    <uses-permission android:name="android.permission.INTERNET"/>
-    <uses-permission android:name="android.permission.CAMERA"/>
-
-    <!-- No la hagas requerida para permitir emuladores sin cámara -->
-    <uses-feature android:name="android.hardware.camera.any" android:required="false"/>
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.CAMERA" />
+    <uses-feature android:name="android.hardware.camera.any" android:required="false" />
 
     <application
         android:allowBackup="true"
@@ -18,77 +16,95 @@
         android:usesCleartextTraffic="true"
         tools:targetApi="31">
 
-        <!-- Launcher -->
         <activity
-            android:name="com.example.seitasv2.MainActivity"
+            android:name=".MainActivity"
             android:exported="true"
             android:theme="@style/Theme.Seitasv2">
             <intent-filter>
-                <action android:name="android.intent.action.MAIN"/>
-                <category android:name="android.intent.category.LAUNCHER"/>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
 
-        <!-- Login -->
         <activity
-            android:name="com.example.seitasv2.LoginActivity"
+            android:name=".LoginActivity"
             android:exported="true"
-            android:theme="@style/Theme.Seitasv2"/>
+            android:theme="@style/Theme.Seitasv2" />
 
-        <!-- Lecciones -->
         <activity
-            android:name="com.example.seitasv2.LeccionesActivity"
+            android:name=".WelcomeActivity"
+            android:exported="true"
+            android:theme="@style/Theme.Seitasv2" />
+
+        <activity
+            android:name=".LeccionesActivity"
             android:exported="true"
             android:label="Lecciones"
-            android:theme="@style/Theme.Seitasv2"/>
+            android:theme="@style/Theme.Seitasv2" />
 
-        <!-- Usuarios (solo admin) -->
+
+
         <activity
-            android:name="com.example.seitasv2.UsuariosActivity"
+            android:name=".UsuariosActivity"
             android:exported="true"
             android:label="Usuarios"
-            android:theme="@style/Theme.Seitasv2"/>
+            android:theme="@style/Theme.Seitasv2" />
 
         <activity
-            android:name="com.example.seitasv2.GestionUsuariosActivity"
+            android:name=".AjustesActivity"
             android:exported="true"
-            android:label="Gestión de Usuarios"
-            android:theme="@style/Theme.Seitasv2"/>
+            android:label="Ajustes"
+            android:theme="@style/Theme.Seitasv2" />
 
-        <!-- 🚀 Reconocimiento de gestos guardados (solo admin) -->
         <activity
-            android:name="com.example.seitasv2.HandsActivity"
+            android:name=".EstadisticasActivity"
+            android:exported="true"
+            android:label="Estadísticas"
+            android:theme="@style/Theme.Seitasv2" />
+
+        <activity
+            android:name=".GestosMenuActivity"
+            android:exported="true"
+            android:label="Gestos ADMIN"
+            android:theme="@style/Theme.Seitasv2" />
+
+        <activity
+            android:name=".HandsActivity"
             android:exported="true"
             android:label="Practicar Gestos"
-            android:theme="@style/Theme.Seitasv2"/>
+            android:theme="@style/Theme.Seitasv2" />
 
-        <!-- 🚀 Guardar nuevos gestos (solo admin) -->
         <activity
-            android:name="com.example.seitasv2.DatasetActivity"
+            android:name=".DatasetActivity"
             android:exported="true"
             android:label="Modo Dataset"
-            android:theme="@style/Theme.Seitasv2"/>
+            android:theme="@style/Theme.Seitasv2" />
 
-        <!-- 🚀 Prácticas normales (todos los usuarios) -->
         <activity
-            android:name="com.example.seitasv2.PracticasActivity"
+            android:name=".PracticasActivity"
             android:exported="true"
             android:label="Prácticas"
-            android:theme="@style/Theme.Seitasv2"/>
-
-
-        <activity
-            android:name="com.example.seitasv2.LeccionFormActivity"
-            android:exported="true"
-            android:label="Formulario Lección"
-            android:theme="@style/Theme.Seitasv2"/>
+            android:theme="@style/Theme.Seitasv2" />
 
         <activity
-            android:name="com.example.seitasv2.VideoPlayerActivity"
+            android:name=".VideoPlayerActivity"
             android:exported="true"
             android:label="Reproductor de Video"
-            android:theme="@style/Theme.Seitasv2"/>
+            android:hardwareAccelerated="true"
+            android:configChanges="orientation|screenSize"
+            android:theme="@style/Theme.Seitasv2" />
 
+        <activity
+            android:name=".GestionUsuariosActivity"
+            android:exported="true"
+            android:label="Prácticas"
+            android:theme="@style/Theme.Seitasv2" />
+
+        <activity
+            android:name=".GestionLeccionesActivity"
+            android:exported="true"
+            android:label="Prácticas"
+            android:theme="@style/Theme.Seitasv2" />
 
     </application>
 </manifest>

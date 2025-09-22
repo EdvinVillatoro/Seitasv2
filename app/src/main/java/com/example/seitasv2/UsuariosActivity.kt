@@ -10,6 +10,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.AccountCircle
+import androidx.compose.material.icons.filled.BrightnessLow
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -90,7 +91,7 @@ fun UsuarioScreen(
                 actions = {
                     if (isAdmin) {
                         IconButton(onClick = onNavigateToGestion) {
-                            Icon(Icons.Default.AccountCircle, contentDescription = "Gestión de Usuarios")
+                            Icon(Icons.Default.BrightnessLow, contentDescription = "Gestión de Usuarios")
 
                         }
                     }
