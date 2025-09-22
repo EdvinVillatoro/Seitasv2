@@ -172,3 +172,21 @@ private suspend fun httpWriteWithBody(
  *  Lecciones (CRUD)
  * ------------------------------------------------------ */
 
+/* -------------------------------------------------------
+ *  Gestos (GET todos)
+ * ------------------------------------------------------ */
+
+suspend fun getGestos(context: Context): List<GestoDB> {
+    val body = httpGet(context, "$BASE_URL/gestos")
+    val arr = JSONArray(body)
+    val list = mutableListOf<GestoDB>()
+    for (i in 0 until arr.length()) {
+        val obj = arr.getJSONObject(i)
+        val id = obj.getInt("id")
+        val nombre = obj.getString("nombre")
+        val datosArr = obj.getJSONArray("datos")
+        val datos = (0 until datosArr.length()).map { datosArr.getDouble(it).toFloat() }
+        list.add(GestoDB(id, nombre, datos))
+    }
+    return list
+}

@@ -45,12 +45,22 @@ import com.google.mediapipe.tasks.vision.core.ImageProcessingOptions
 import com.google.mediapipe.tasks.vision.core.RunningMode
 import com.google.mediapipe.tasks.vision.handlandmarker.HandLandmarker
 import com.google.mediapipe.tasks.vision.handlandmarker.HandLandmarkerResult
+import org.json.JSONArray
 import java.io.ByteArrayOutputStream
+import java.net.HttpURLConnection
+import java.net.URL
 import java.util.concurrent.Executors
+import kotlin.math.sqrt
+
+data class GestoDB(val id: Int, val nombre: String, val datos: List<Float>)
 
 class HandsActivity : ComponentActivity() {
 
     private var landmarker: HandLandmarker? = null
+    private val coroutineScope = CoroutineScope(Dispatchers.IO)
+
+    private var gestosDB by mutableStateOf<List<GestoDB>>(emptyList())
+    private var gestoDetectado by mutableStateOf("Esperando gesto...")
 
     private val askCamera =
         registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
@@ -65,12 +75,16 @@ class HandsActivity : ComponentActivity() {
     }
 
     private fun startCompose() {
+        // cargar gestos del backend
+        coroutineScope.launch { cargarGestos() }
+
         setContent {
             Seitasv2Theme {
                 Surface {
                     HandsScreen(
                         landmarkerProvider = ::buildLandmarker,
-                        onDisposeLandmarker = ::disposeLandmarker
+                        onDisposeLandmarker = ::disposeLandmarker,
+                        gestoDetectado = { gestoDetectado }
                     )
                 }
             }
@@ -88,7 +102,7 @@ class HandsActivity : ComponentActivity() {
                 .setBaseOptions(base)
                 .setRunningMode(RunningMode.LIVE_STREAM)
                 .setResultListener { r, _ -> r?.let(onResults) }
-                .setNumHands(2) // soportar 2 manos
+                .setNumHands(2)
                 .setMinHandDetectionConfidence(0.5f)
                 .setMinHandPresenceConfidence(0.5f)
                 .setMinTrackingConfidence(0.5f)
@@ -112,32 +126,101 @@ class HandsActivity : ComponentActivity() {
         disposeLandmarker()
         super.onDestroy()
     }
+
+    /** ==== Lógica para descargar gestos desde backend ==== */
+    private suspend fun cargarGestos() {
+        try {
+            val lista = getGestos(this@HandsActivity)
+            gestosDB = lista
+            Log.d("HandsActivity", "Gestos cargados: ${gestosDB.size}")
+        } catch (e: Exception) {
+            Log.e("HandsActivity", "Error cargando gestos", e)
+        }
+    }
+
+
+    /** ==== Comparación de vectores ==== */
+    private fun euclideanDistance(v1: List<Float>, v2: List<Float>): Float {
+        if (v1.size != v2.size) return Float.MAX_VALUE
+        var sum = 0f
+        for (i in v1.indices) {
+            val diff = v1[i] - v2[i]
+            sum += diff * diff
+        }
+        return sqrt(sum)
+    }
+
+    private fun findBestMatch(current: List<Float>): String? {
+        var best: String? = null
+        var minDist = Float.MAX_VALUE
+        for (g in gestosDB) {
+            val dist = euclideanDistance(current, g.datos)
+            Log.d("HandsActivity", "Comparando con ${g.nombre}, distancia=$dist") // 👈
+            if (dist < minDist) {
+                minDist = dist
+                best = g.nombre
+            }
+        }
+        // prueba con umbral más grande, por ejemplo 10f
+        return if (minDist < 10f) best else null
+    }
+
+
+
+    /** ==== Procesar landmarks ==== */
+    /** ==== Procesar landmarks con normalización ==== */
+    fun procesarLandmarks(result: HandLandmarkerResult) {
+        result.landmarks().firstOrNull()?.let { hand ->
+            // 1. Punto de referencia (muñeca = landmark 0)
+            val wrist = hand[0]
+
+            // 2. Calcular distancia de referencia (muñeca -> dedo medio base, landmark 9)
+            val middle = hand[9]
+            val refDist = sqrt(
+                (middle.x() - wrist.x()) * (middle.x() - wrist.x()) +
+                        (middle.y() - wrist.y()) * (middle.y() - wrist.y()) +
+                        (middle.z() - wrist.z()) * (middle.z() - wrist.z())
+            ).coerceAtLeast(1e-6f) // evitar división entre 0
+
+            // 3. Normalizar: trasladar al origen (restar muñeca) y escalar por refDist
+            val vector = hand.flatMap { l ->
+                listOf(
+                    (l.x() - wrist.x()) / refDist,
+                    (l.y() - wrist.y()) / refDist,
+                    (l.z() - wrist.z()) / refDist
+                )
+            }
+
+            Log.d("HandsActivity", "Vector normalizado=$vector")
+
+            // 4. Comparar con base
+            val match = findBestMatch(vector)
+            gestoDetectado = match ?: "Sin coincidencia"
+        }
+    }
+
+
+
 }
 
 @OptIn(ExperimentalGetImage::class)
 @Composable
 private fun HandsScreen(
     landmarkerProvider: ((HandLandmarkerResult) -> Unit) -> HandLandmarker?,
-    onDisposeLandmarker: () -> Unit
+    onDisposeLandmarker: () -> Unit,
+    gestoDetectado: () -> String
 ) {
     val ctx = LocalContext.current
     val executor = remember { Executors.newSingleThreadExecutor() }
-
     var result by remember { mutableStateOf<HandLandmarkerResult?>(null) }
     var landmarkerInitialized by remember { mutableStateOf(false) }
     var lastFrameWidth by remember { mutableStateOf(0) }
     var lastFrameHeight by remember { mutableStateOf(0) }
     var lastRotation by remember { mutableStateOf(0) }
-    var gestureLabels by remember { mutableStateOf(listOf<String>()) }
-
-    val classifier = remember { GestureClassifier() }
 
     val onResults: (HandLandmarkerResult) -> Unit = { newResult ->
         result = newResult
-        // etiquetas por mano (viene como lista de listas de landmarks)
-        gestureLabels = newResult.landmarks().map { hand ->
-            classifier.classify(hand)  // overload de 1 mano
-        }
+        (ctx.findActivity() as? HandsActivity)?.procesarLandmarks(newResult)
     }
 
     val previewView = remember {
@@ -157,13 +240,10 @@ private fun HandsScreen(
                 onDisposeLandmarker(); executor.shutdown()
             }
         }
-
         landmarkerInitialized = true
 
         val cameraProvider = ProcessCameraProvider.getInstance(ctx).get()
-        val preview = Preview.Builder()
-            .setTargetResolution(Size(640, 480))
-            .build()
+        val preview = Preview.Builder().setTargetResolution(Size(640, 480)).build()
             .also { it.setSurfaceProvider(previewView.surfaceProvider) }
 
         val analysis = ImageAnalysis.Builder()
@@ -176,14 +256,11 @@ private fun HandsScreen(
                         lastFrameWidth = imageProxy.width
                         lastFrameHeight = imageProxy.height
                         lastRotation = imageProxy.imageInfo.rotationDegrees
-
                         val bitmap = imageProxy.toBitmap()
                         val mpImage = BitmapImageBuilder(bitmap).build()
-
                         val opts = ImageProcessingOptions.builder()
                             .setRotationDegrees(lastRotation)
                             .build()
-
                         val ts = SystemClock.elapsedRealtime()
                         detector.detectAsync(mpImage, opts, ts)
                     } catch (t: Throwable) {
@@ -196,12 +273,14 @@ private fun HandsScreen(
 
         try {
             cameraProvider.unbindAll()
-            cameraProvider.bindToLifecycle(
-                ctx.findActivity(),                    // ← ahora es pública
-                CameraSelector.DEFAULT_FRONT_CAMERA,   // cámara frontal
-                preview,
-                analysis
-            )
+            (ctx.findActivity() as? ComponentActivity)?.let { activity ->
+                cameraProvider.bindToLifecycle(
+                    activity,
+                    CameraSelector.DEFAULT_FRONT_CAMERA,
+                    preview,
+                    analysis
+                )
+            }
         } catch (e: Exception) {
             Log.e("HandsActivity", "Bind camera error", e)
         }
@@ -217,7 +296,7 @@ private fun HandsScreen(
         AndroidView(factory = { previewView }, modifier = Modifier.fillMaxSize())
 
         if (landmarkerInitialized && lastFrameWidth > 0 && lastFrameHeight > 0) {
-            LandmarkOverlay(                       // ← ya definida abajo
+            LandmarkOverlay(
                 modifier = Modifier.fillMaxSize(),
                 result = result,
                 usarCamaraFrontal = true,
@@ -227,30 +306,23 @@ private fun HandsScreen(
             )
         }
 
-        // Etiquetas por mano
         Column(
-            modifier = Modifier
-                .align(Alignment.TopCenter)
-                .padding(top = 32.dp)
+            modifier = Modifier.align(Alignment.TopCenter).padding(16.dp)
                 .background(Color.Black.copy(alpha = 0.5f))
-                .padding(12.dp)
+                .padding(12.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            gestureLabels.forEachIndexed { i, label ->
-                if (label.isNotEmpty()) {
-                    Text("✋ Mano ${i + 1}: $label", color = Color.Yellow)
-                }
-            }
+            Text(text = gestoDetectado(), color = Color.Yellow)
         }
 
         Button(
-            onClick = { ctx.findActivity().finish() },
+            onClick = { ctx.findActivity()?.finish() },
             modifier = Modifier.align(Alignment.TopStart).padding(16.dp)
         ) { Text("Volver") }
     }
 }
 
-/* ---------- Overlay: DIBUJO DE LANDMARKS ---------- */
-
+/* ---------- Overlay para dibujar landmarks ---------- */
 @Composable
 fun LandmarkOverlay(
     modifier: Modifier,
@@ -271,24 +343,18 @@ fun LandmarkOverlay(
         0 to 17                                  // palma
     )
 
-    // MediaPipe normaliza tras aplicar rotación interna.
     val baseW = if (rotationDegrees % 180 == 0) srcWidth else srcHeight
     val baseH = if (rotationDegrees % 180 == 0) srcHeight else srcWidth
-
-    val hands = result.landmarks()
 
     Canvas(modifier) {
         val viewW = size.width
         val viewH = size.height
-
-        hands.forEach { hand ->
-            // líneas
+        result.landmarks().forEach { hand ->
             connections.forEach { (a, b) ->
                 val p1 = toViewCoords(hand[a].x(), hand[a].y(), baseW, baseH, viewW, viewH, usarCamaraFrontal)
                 val p2 = toViewCoords(hand[b].x(), hand[b].y(), baseW, baseH, viewW, viewH, usarCamaraFrontal)
                 drawLine(Color.Green, p1, p2, strokeWidth = 4f, cap = StrokeCap.Round)
             }
-            // puntos
             hand.forEach { l ->
                 val p = toViewCoords(l.x(), l.y(), baseW, baseH, viewW, viewH, usarCamaraFrontal)
                 drawCircle(Color.Yellow, radius = 6f, center = p, style = Stroke(width = 2f))
@@ -297,6 +363,7 @@ fun LandmarkOverlay(
     }
 }
 
+/* ---------- Helpers ---------- */
 fun toViewCoords(
     xNorm: Float,
     yNorm: Float,
@@ -306,53 +373,42 @@ fun toViewCoords(
     viewH: Float,
     mirrorFront: Boolean
 ): Offset {
-    // rotación 90° CW para frontal/vertical
     var rx = yNorm
     var ry = 1f - xNorm
-
     var x = rx * baseW
     var y = ry * baseH
-
     val scale = maxOf(viewW / baseW, viewH / baseH)
     val scaledW = baseW * scale
     val scaledH = baseH * scale
     val dx = (viewW - scaledW) / 2f
     val dy = (viewH - scaledH) / 2f
-
     x = x * scale + dx
     y = y * scale + dy
-
     if (mirrorFront) x = viewW - x
     return Offset(x, y)
 }
 
-/* ---------- Helpers compartidos ---------- */
-
-// ¡PÚBLICA! Para poder usarla desde otras activities (p. ej. DatasetActivity)
-fun Context.findActivity(): ComponentActivity {
+fun Context.findActivity(): ComponentActivity? {
     var c = this
     while (c is ContextWrapper) {
         if (c is ComponentActivity) return c
         c = c.baseContext
     }
-    throw IllegalStateException("No ComponentActivity found")
+    return null
 }
 
-/** Convierte ImageProxy (YUV) a Bitmap ARGB_8888 (sin rotar) */
+/** Convierte ImageProxy a Bitmap ARGB_8888 */
 fun ImageProxy.toBitmap(): Bitmap {
     val yBuffer = planes[0].buffer
     val uBuffer = planes[1].buffer
     val vBuffer = planes[2].buffer
-
     val ySize = yBuffer.remaining()
     val uSize = uBuffer.remaining()
     val vSize = vBuffer.remaining()
-
     val nv21 = ByteArray(ySize + uSize + vSize)
     yBuffer.get(nv21, 0, ySize)
     vBuffer.get(nv21, ySize, vSize)
     uBuffer.get(nv21, ySize + vSize, uSize)
-
     val yuvImage = YuvImage(nv21, ImageFormat.NV21, width, height, null)
     val out = ByteArrayOutputStream()
     yuvImage.compressToJpeg(Rect(0, 0, width, height), 100, out)

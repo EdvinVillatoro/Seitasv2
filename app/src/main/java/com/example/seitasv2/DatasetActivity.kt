@@ -174,12 +174,14 @@ fun DatasetScreen(
 
         try {
             cameraProvider.unbindAll()
-            cameraProvider.bindToLifecycle(
-                ctx.findActivity(),
-                CameraSelector.DEFAULT_FRONT_CAMERA,
-                preview,
-                analysis
-            )
+            ctx.findActivity()?.let {
+                cameraProvider.bindToLifecycle(
+                    it,
+                    CameraSelector.DEFAULT_FRONT_CAMERA,
+                    preview,
+                    analysis
+                )
+            }
         } catch (e: Exception) {
             Log.e("DatasetActivity", "Bind camera error", e)
         }
@@ -278,7 +280,7 @@ fun DatasetScreen(
             ) { Text("Guardar gesto") }
 
             Spacer(modifier = Modifier.height(8.dp))
-            Button(onClick = { ctx.findActivity().finish() }) {
+            Button(onClick = { ctx.findActivity()?.finish() }) {
                 Text("Volver")
             }
         }

@@ -29,11 +29,14 @@ class MainActivity : ComponentActivity() {
                         onOpenUsers = {
                             startActivity(Intent(this, UsuariosActivity::class.java))
                         },
-                        onOpenHands = {
-                            startActivity(Intent(this, HandsActivity::class.java))
+                        onOpenPracticas = {
+                            startActivity(Intent(this, PracticasActivity::class.java))
                         },
                         onOpenDataset = {
                             startActivity(Intent(this, DatasetActivity::class.java))
+                        },
+                        onOpenHands = {
+                            startActivity(Intent(this, HandsActivity::class.java))
                         }
                     )
                 }
@@ -46,30 +49,39 @@ class MainActivity : ComponentActivity() {
 fun HomeScreen(
     onStartLessons: () -> Unit,
     onOpenUsers: () -> Unit,
-    onOpenHands: () -> Unit,
-    onOpenDataset: () -> Unit
+    onOpenPracticas: () -> Unit,
+    onOpenDataset: () -> Unit,
+    onOpenHands: () -> Unit
 ) {
     val ctx = LocalContext.current
-    val isAdmin = ctx
+    val tipo = ctx
         .getSharedPreferences("session", android.content.Context.MODE_PRIVATE)
-        .getString("tipo", "") == "admin"
+        .getString("tipo", "")
+
+    val isAdmin = tipo == "admin"
 
     PeachScreen {
+        // ✅ Todos ven Lecciones
         PeachButton("Lecciones", onClick = onStartLessons)
         Spacer(Modifier.height(12.dp))
 
-        PeachButton("Reconocimiento de Manos", onClick = onOpenHands)
+        // ✅ Todos ven Prácticas
+        PeachButton("Prácticas", onClick = onOpenPracticas)
         Spacer(Modifier.height(12.dp))
 
-        // 🚀 Nuevo botón para modo dataset
-        PeachButton("Modo Dataset (Guardar Gestos)", onClick = onOpenDataset)
-        Spacer(Modifier.height(12.dp))
-
+        // 👮‍♂️ Solo Admin
         if (isAdmin) {
+            PeachButton("Modo Dataset (Guardar Gestos)", onClick = onOpenDataset)
+            Spacer(Modifier.height(12.dp))
+
+            PeachButton("Practicar Gestos Agregados", onClick = onOpenHands)
+            Spacer(Modifier.height(12.dp))
+
             PeachButton("Ver Usuarios", onClick = onOpenUsers)
             Spacer(Modifier.height(12.dp))
         }
 
+        // ✅ Todos ven cerrar sesión
         PeachButton(
             text = "Cerrar sesión",
             onClick = {
