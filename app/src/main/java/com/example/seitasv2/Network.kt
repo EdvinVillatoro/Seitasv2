@@ -10,6 +10,8 @@ import java.io.BufferedReader
 import java.io.InputStreamReader
 import java.net.HttpURLConnection
 import java.net.URL
+import com.example.seitasv2.models.Palabra
+
 
 // Ajusta si cambias puerto/host del backend
 
@@ -175,6 +177,53 @@ private suspend fun httpWriteWithBody(
 /* -------------------------------------------------------
  *  Gestos (GET todos)
  * ------------------------------------------------------ */
+// ========== Palabras CRUD (Admin) ==========
+
+suspend fun getPalabras(context: Context): List<Palabra> {
+    val body = httpGet(context, "$BASE_URL/palabras")
+    val arr = JSONArray(body)
+    val list = mutableListOf<Palabra>()
+    for (i in 0 until arr.length()) {
+        val obj = arr.getJSONObject(i)
+        list.add(
+            Palabra(
+                id = obj.getInt("id"),
+                palabra = obj.getString("palabra"),
+                pista = obj.optString("pista", ""),
+                minijuego = obj.optString("minijuego", "")
+            )
+        )
+    }
+    return list
+}
+
+suspend fun addPalabra(context: Context, palabra: String, pista: String): Palabra {
+    val payload = JSONObject().apply {
+        put("palabra", palabra)
+        put("pista", pista)
+        put("minijuego", "ahorcado")
+    }.toString()
+    val body = httpPost(context, "$BASE_URL/palabras", payload)
+    val obj = JSONObject(body)
+    return Palabra(
+        id = obj.getInt("id"),
+        palabra = obj.getString("palabra"),
+        pista = obj.optString("pista", ""),
+        minijuego = obj.optString("minijuego", "")
+    )
+}
+
+suspend fun updatePalabra(context: Context, id: Int, palabra: String, pista: String) {
+    val payload = JSONObject().apply {
+        put("palabra", palabra)
+        put("pista", pista)
+    }.toString()
+    httpPut(context, "$BASE_URL/palabras/$id", payload)
+}
+
+suspend fun deletePalabra(context: Context, id: Int) {
+    httpDelete(context, "$BASE_URL/palabras/$id")
+}
 
 suspend fun getGestos(context: Context): List<GestoDB> {
     val body = httpGet(context, "$BASE_URL/gestos")

@@ -42,7 +42,11 @@
             android:label="Lecciones"
             android:theme="@style/Theme.Seitasv2" />
 
-
+        <activity
+            android:name=".GestionPalabrasActivity"
+            android:exported="true"
+            android:label="Palabras Ahorcado"
+            android:theme="@style/Theme.Seitasv2" />
 
         <activity
             android:name=".UsuariosActivity"
