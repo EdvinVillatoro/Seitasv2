@@ -21,25 +21,38 @@ class MainActivity : ComponentActivity() {
             Seitasv2Theme {
                 Surface(modifier = Modifier.fillMaxSize()) {
                     var showUserMenu by remember { mutableStateOf(false) }
-
+                    var showMiniJuegosAdmin by remember { mutableStateOf(false) }
                     val ctx = this
-                    if (showUserMenu) {
-                        UserMenuScreen(
-                            onBack = { showUserMenu = false },
-                            onStartLessons = { startActivity(Intent(ctx, LeccionesActivity::class.java)) },
-                            onAdminLessons = { startActivity(Intent(ctx, GestionLeccionesActivity::class.java)) },
-                            onOpenUsers = { startActivity(Intent(ctx, UsuariosActivity::class.java)) },
-                            onOpenPracticas = { startActivity(Intent(ctx, `PracticasActivity`::class.java)) }
-                        )
-                    } else {
-                        HomeScreen(
-                            onOpenUserMenu = { showUserMenu = true },
-                            onStartLessons = { startActivity(Intent(ctx, LeccionesActivity::class.java)) },
-                            onOpenPracticas = { startActivity(Intent(ctx, `PracticasActivity`::class.java)) },
-                            onOpenGestos = { startActivity(Intent(ctx, GestosMenuActivity::class.java)) },
-                            onOpenAjustes = { startActivity(Intent(ctx, AjustesActivity::class.java)) },
-                            onOpenPalabras = { startActivity(Intent(ctx, GestionPalabrasActivity::class.java)) }
-                        )
+
+                    when {
+                        showMiniJuegosAdmin -> {
+                            AdminMiniJuegosMenu(
+                                onBack = { showMiniJuegosAdmin = false },
+                                onOpenPalabras = { startActivity(Intent(ctx, GestionPalabrasActivity::class.java)) },
+                                onOpenDeletreo = { startActivity(Intent(ctx, GestionDeletreoActivity::class.java)) }
+                            )
+                        }
+
+                        showUserMenu -> {
+                            UserMenuScreen(
+                                onBack = { showUserMenu = false },
+                                onStartLessons = { startActivity(Intent(ctx, LeccionesActivity::class.java)) },
+                                onAdminLessons = { startActivity(Intent(ctx, GestionLeccionesActivity::class.java)) },
+                                onOpenUsers = { startActivity(Intent(ctx, UsuariosActivity::class.java)) },
+                                onOpenPracticas = { startActivity(Intent(ctx, PracticasMenuActivity::class.java)) }
+                            )
+                        }
+
+                        else -> {
+                            HomeScreen(
+                                onOpenUserMenu = { showUserMenu = true },
+                                onStartLessons = { startActivity(Intent(ctx, LeccionesActivity::class.java)) },
+                                onOpenPracticas = { startActivity(Intent(ctx, PracticasMenuActivity::class.java)) },
+                                onOpenGestos = { startActivity(Intent(ctx, GestosMenuActivity::class.java)) },
+                                onOpenAjustes = { startActivity(Intent(ctx, AjustesActivity::class.java)) },
+                                onOpenAdminMinijuegos = { showMiniJuegosAdmin = true }
+                            )
+                        }
                     }
                 }
             }
@@ -54,7 +67,7 @@ fun HomeScreen(
     onOpenPracticas: () -> Unit,
     onOpenGestos: () -> Unit,
     onOpenAjustes: () -> Unit,
-    onOpenPalabras: () -> Unit
+    onOpenAdminMinijuegos: () -> Unit
 ) {
     val ctx = LocalContext.current
     val tipo = ctx.getSharedPreferences("session", android.content.Context.MODE_PRIVATE)
@@ -63,7 +76,7 @@ fun HomeScreen(
 
     PeachScreen {
         if (!isAdmin) {
-            // ✅ Usuario normal: va directo a sus pantallas
+            // ✅ Usuario normal
             PeachButton(text = "Lecciones", onClick = onStartLessons)
             Spacer(Modifier.height(12.dp))
 
@@ -72,14 +85,14 @@ fun HomeScreen(
 
             PeachButton(text = "Ajustes", onClick = onOpenAjustes)
         } else {
-            // 👮‍♂️ Admin: menú más completo
+            // 👮‍♂️ Admin: menú extendido
             PeachButton(text = "Usuarios", onClick = onOpenUserMenu)
             Spacer(Modifier.height(12.dp))
 
             PeachButton(text = "Gestos ADMIN", onClick = onOpenGestos)
             Spacer(Modifier.height(12.dp))
 
-            PeachButton(text = "Palabras Ahorcado", onClick = onOpenPalabras)
+            PeachButton(text = "Admin Minijuegos", onClick = onOpenAdminMinijuegos)
             Spacer(Modifier.height(12.dp))
 
             PeachButton(text = "Ajustes", onClick = onOpenAjustes)
@@ -99,17 +112,32 @@ fun UserMenuScreen(
         PeachButton(text = "⬅ Volver", onClick = onBack)
         Spacer(Modifier.height(12.dp))
 
-        // ✅ Todos dentro del menú "Usuarios"
         PeachButton(text = "Lecciones", onClick = onStartLessons)
         Spacer(Modifier.height(12.dp))
 
         PeachButton(text = "Prácticas", onClick = onOpenPracticas)
         Spacer(Modifier.height(12.dp))
 
-        // 👮‍♂️ Solo admin dentro del menú "Usuarios"
         PeachButton(text = "Administrar Lecciones", onClick = onAdminLessons)
         Spacer(Modifier.height(12.dp))
 
-        PeachButton(text = "Ver Usuarios", onClick = onOpenUsers)
+        PeachButton(text = "Administrar Usuarios", onClick = onOpenUsers)
+    }
+}
+
+@Composable
+fun AdminMiniJuegosMenu(
+    onBack: () -> Unit,
+    onOpenPalabras: () -> Unit,
+    onOpenDeletreo: () -> Unit
+) {
+    PeachScreen {
+        PeachButton(text = "⬅ Volver", onClick = onBack)
+        Spacer(Modifier.height(16.dp))
+
+        PeachButton(text = "Palabras Ahorcado", onClick = onOpenPalabras)
+        Spacer(Modifier.height(16.dp))
+
+        PeachButton(text = "Imágenes Deletreo", onClick = onOpenDeletreo)
     }
 }

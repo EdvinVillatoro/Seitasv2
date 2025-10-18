@@ -34,12 +34,42 @@ class VideoPlayerActivity : ComponentActivity() {
         }
     }
 
-    private fun extractYoutubeId(url: String): String {
-        return when {
-            url.contains("watch?v=") -> url.substringAfter("v=").substringBefore("&")
-            url.contains("youtu.be/") -> url.substringAfter("youtu.be/")
-            else -> url
+    /** Extrae el ID de YouTube de forma robusta para múltiples formatos de URL. */
+    private fun extractYoutubeId(urlRaw: String): String {
+        val url = urlRaw.trim()
+
+        // 1) Full watch URL
+        if ("watch?v=" in url) {
+            val v = url.substringAfter("watch?v=").substringBefore("&").substringBefore("?")
+            return v.trim()
         }
+
+        // 2) Short link youtu.be/VIDEOID[?t=..][&...]
+        if ("youtu.be/" in url) {
+            val v = url.substringAfter("youtu.be/").substringBefore("?").substringBefore("&")
+            return v.trim()
+        }
+
+        // 3) /embed/VIDEOID
+        if ("/embed/" in url) {
+            val v = url.substringAfter("/embed/").substringBefore("?").substringBefore("&")
+            return v.trim()
+        }
+
+        // 4) /shorts/VIDEOID
+        if ("/shorts/" in url) {
+            val v = url.substringAfter("/shorts/").substringBefore("?").substringBefore("&")
+            return v.trim()
+        }
+
+        // 5) /live/VIDEOID
+        if ("/live/" in url) {
+            val v = url.substringAfter("/live/").substringBefore("?").substringBefore("&")
+            return v.trim()
+        }
+
+        // 6) Si te mandan directamente el ID
+        return url.substringBefore("?").substringBefore("&").trim()
     }
 }
 
@@ -48,11 +78,10 @@ fun VideoScreen(videoId: String, tips: String) {
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(16.dp), // 🔹 espaciado más uniforme
+            .padding(16.dp),
         verticalArrangement = Arrangement.Top,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        // Título
         Text(
             "🎬 Video de la Lección",
             style = MaterialTheme.typography.headlineSmall,
@@ -60,31 +89,39 @@ fun VideoScreen(videoId: String, tips: String) {
             modifier = Modifier.padding(bottom = 12.dp)
         )
 
-        // Video destacado con bordes redondeados
         Card(
             modifier = Modifier
                 .fillMaxWidth()
-                .aspectRatio(16 / 9f), // 🔹 relación clásica de video
+                .aspectRatio(16 / 9f),
             shape = RoundedCornerShape(16.dp),
             elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
         ) {
-            AndroidView(
-                modifier = Modifier.fillMaxSize(),
-                factory = { context ->
-                    YouTubePlayerView(context).apply {
-                        addYouTubePlayerListener(object : AbstractYouTubePlayerListener() {
-                            override fun onReady(player: YouTubePlayer) {
-                                player.loadVideo(videoId, 0f)
-                            }
-                        })
-                    }
+            if (videoId.isBlank()) {
+                // Si la URL venía mala, muéstralo claro al usuario
+                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Text("No se pudo extraer el ID del video.", color = Color.Red)
                 }
-            )
+            } else {
+                AndroidView(
+                    modifier = Modifier.fillMaxSize(),
+                    factory = { context ->
+                        YouTubePlayerView(context).apply {
+                            // Muy recomendado: vincular al lifecycle del Activity
+                            (context as? ComponentActivity)?.lifecycle?.addObserver(this)
+
+                            addYouTubePlayerListener(object : AbstractYouTubePlayerListener() {
+                                override fun onReady(player: YouTubePlayer) {
+                                    player.loadVideo(videoId, 0f)
+                                }
+                            })
+                        }
+                    }
+                )
+            }
         }
 
         Spacer(Modifier.height(20.dp))
 
-        // Caja elegante para tips
         Card(
             modifier = Modifier
                 .fillMaxWidth()

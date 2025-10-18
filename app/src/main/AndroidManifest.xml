@@ -12,9 +12,14 @@
         android:icon="@drawable/ic_hand"
         android:roundIcon="@drawable/ic_hand"
         android:supportsRtl="true"
+        android:label="Seitas"
         android:theme="@style/Theme.Seitasv2"
         android:usesCleartextTraffic="true"
+        android:networkSecurityConfig="@xml/network_security_config"
         tools:targetApi="31">
+
+
+
 
         <activity
             android:name=".MainActivity"
@@ -89,6 +94,11 @@
             android:exported="true"
             android:label="Prácticas"
             android:theme="@style/Theme.Seitasv2" />
+        <activity
+            android:name=".GestionDeletreoActivity"
+            android:exported="true"
+            android:label="Gestión Deletreo"
+            android:theme="@style/Theme.Seitasv2" />
 
         <activity
             android:name=".VideoPlayerActivity"
@@ -97,6 +107,12 @@
             android:hardwareAccelerated="true"
             android:configChanges="orientation|screenSize"
             android:theme="@style/Theme.Seitasv2" />
+
+        <activity android:name=".PracticasMenuActivity"
+            android:exported="true" />
+
+        <activity android:name=".DeletreoActivity"
+            android:exported="true" />
 
         <activity
             android:name=".GestionUsuariosActivity"
@@ -109,6 +125,11 @@
             android:exported="true"
             android:label="Prácticas"
             android:theme="@style/Theme.Seitasv2" />
+
+        <activity android:name=".PracticarGestosActivity" />
+
+
+
 
     </application>
 </manifest>

@@ -11,11 +11,15 @@ import java.io.InputStreamReader
 import java.net.HttpURLConnection
 import java.net.URL
 import com.example.seitasv2.models.Palabra
+import com.example.seitasv2.ImagenDeletreo
+
 
 
 // Ajusta si cambias puerto/host del backend
 
-const val BASE_URL = "http://172.20.10.4:5000/api"
+const val BASE_URL = "https://seitas.zapto.org/api"
+
+
 
 
 /* -------------------------------------------------------
@@ -238,4 +242,82 @@ suspend fun getGestos(context: Context): List<GestoDB> {
         list.add(GestoDB(id, nombre, datos))
     }
     return list
+}
+
+/* -------------------------------------------------------
+ *  CRUD para IMÁGENES DELETREO
+ * ------------------------------------------------------ */
+
+
+/* -------------------------------------------------------
+ *  CRUD IMÁGENES DELETREO
+ * ------------------------------------------------------ */
+
+suspend fun getImagenesDeletreo(context: Context): List<ImagenDeletreo> {
+    val body = httpGet(context, "$BASE_URL/deletreo")
+    val arr = JSONArray(body)
+    val list = mutableListOf<ImagenDeletreo>()
+    for (i in 0 until arr.length()) {
+        val obj = arr.getJSONObject(i)
+        list.add(
+            ImagenDeletreo(
+                id = obj.getInt("id"),
+                palabra = obj.getString(    "palabra"),
+                imagen_url = obj.getString("imagen_url")
+            )
+        )
+    }
+    return list
+}
+
+suspend fun getImagenDeletreoById(context: Context, id: Int): ImagenDeletreo {
+    val body = httpGet(context, "$BASE_URL/deletreo/$id")
+    val obj = JSONObject(body)
+    return ImagenDeletreo(
+        id = obj.getInt("id"),
+        palabra = obj.getString("palabra"),
+        imagen_url = obj.getString("imagen_url")
+    )
+}
+
+suspend fun addImagenDeletreo(context: Context, palabra: String, imagenUrl: String): ImagenDeletreo {
+    val payload = JSONObject().apply {
+        put("palabra", palabra)
+        put("imagen_url", imagenUrl)
+    }.toString()
+    val body = httpPost(context, "$BASE_URL/deletreo", payload)
+    val obj = JSONObject(body)
+    return ImagenDeletreo(
+        id = obj.getInt("id"),
+        palabra = obj.getString("palabra"),
+        imagen_url = obj.getString("imagen_url")
+    )
+}
+
+suspend fun updateImagenDeletreo(context: Context, id: Int, palabra: String, imagenUrl: String): ImagenDeletreo {
+    val payload = JSONObject().apply {
+        put("palabra", palabra)
+        put("imagen_url", imagenUrl)
+    }.toString()
+    val body = httpPut(context, "$BASE_URL/deletreo/$id", payload)
+    return try {
+        val obj = JSONObject(body)
+        ImagenDeletreo(
+            id = obj.getInt("id"),
+            palabra = obj.getString("palabra"),
+            imagen_url = obj.getString("imagen_url")
+        )
+    } catch (_: Exception) {
+        ImagenDeletreo(id, palabra, imagenUrl)
+    }
+}
+
+suspend fun deleteImagenDeletreo(context: Context, id: Int): Boolean {
+    return try {
+        httpDelete(context, "$BASE_URL/deletreo/$id")
+        true
+    } catch (e: Exception) {
+        Log.e("Network", "Error eliminando imagen: ${e.message}")
+        false
+    }
 }
